@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Social Media Impact on Mental Health</title>
+
+<style>
+body {
+  font-family: Georgia, serif;
+  margin: 0;
+  text-align: center;
+}
+
+/* NAVBAR */
+.navbar{
+  background-color:#2c3e50;
+  padding:12px;
+  text-align:center;
+}
+
+.navbar a{
+  color:white;
+  margin:15px;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+.navbar a:hover{
+  color:#1abc9c;
+}
+
+/* BUTTONS */
+.buttons{
+  margin: 15px;
+}
+
+.buttons button{
+  margin: 5px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.buttons button:hover{
+  opacity: 0.8;
+}
+
+h1 {
+  margin-top: 20px;
+}
+
+svg {
+  margin-top: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <a href="documentation.html">Documentation</a>
+  <a href="#visualization">Visualization</a>
+  <a href="video.html">Video</a>
+</div>
+
+<h1>Social Media Impact on Mental Health</h1>
+
+<!-- FILTER BUTTONS -->
+<div class="buttons">
+  <button onclick="update('all')">All</button>
+  <button onclick="update('positive')">Positive</button>
+  <button onclick="update('neutral')">Neutral</button>
+  <button onclick="update('negative')">Negative</button>
+</div>
+
+<div id="visualization">
+  <svg width="800" height="500"></svg>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+
+let globalData;
+
+d3.csv("Social_media_impact_on_life.csv").then(function(data){
+
+  const hourKey = "Avg_Daily_Usage_Hours";
+  const scoreKey = "Mental_Health_Score";
+  const moodKey = "Overall_Impact";
+
+  data.forEach(d => {
+    d.hours = +d[hourKey];
+    d.score = +d[scoreKey];
+    d.mood = d[moodKey];
+  });
+
+  data = data.filter(d => !isNaN(d.hours) && !isNaN(d.score));
+
+  globalData = data;
+
+  draw(data);
+});
+
+// DRAW FUNCTION
+function draw(data){
+
+  d3.select("svg").selectAll("*").remove();
+
+  const svg = d3.select("svg");
+
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(globalData, d => d.hours)])
+    .range([80, 750]);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(globalData, d => d.score)])
+    .range([420, 50]);
+
+  // X Axis
+  svg.append("g")
+    .attr("transform", "translate(0,420)")
+    .call(d3.axisBottom(x));
+
+  // Y Axis
+  svg.append("g")
+    .attr("transform", "translate(80,0)")
+    .call(d3.axisLeft(y));
+
+  // X Axis Label
+  svg.append("text")
+    .attr("x", 400)
+    .attr("y", 470)
+    .attr("text-anchor", "middle")
+    .style("font-size", "14px")
+    .text("Daily Usage (Hours)");
+
+  // Y Axis Label
+  svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -250)
+    .attr("y", 30)
+    .attr("text-anchor", "middle")
+    .style("font-size", "14px")
+    .text("Mental Health Score");
+
+  function getColor(m){
+    if (!m) return "#9e9e9e";
+
+    m = m.toLowerCase().trim();
+
+    if (m.includes("positive")) return "#4CAF50";
+    if (m.includes("neutral")) return "#9e9e9e";
+    if (m.includes("negative")) return "#F44336";
+
+    return "#9e9e9e";
+  }
+
+  svg.selectAll("circle")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("cx", d => x(d.hours))
+    .attr("cy", d => y(d.score))
+    .attr("r", 6)
+    .attr("fill", d => getColor(d.mood))
+    .attr("opacity", 0.75);
+}
+
+// FILTER FUNCTION
+function update(type){
+
+  if(type === "all"){
+    draw(globalData);
+    return;
+  }
+
+  const filtered = globalData.filter(d =>
+    d.mood && d.mood.toLowerCase().includes(type)
+  );
+
+  draw(filtered);
+}
+
+</script>
+
+</body>
+</html>
